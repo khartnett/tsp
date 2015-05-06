@@ -5,8 +5,10 @@ class City {
     private $y;
     
     public function __construct($x = null, $y = null) {
-        if(is_null($x)) { $x = rand(0, 200); }
-        if(is_null($y)) { $y = rand(0, 200); }
+//        if(is_null($x)) { $x = rand(0, 200); }
+//        if(is_null($y)) { $y = rand(0, 200); }
+        if(is_null($x)) { $x = rand(0, 20000) / 100; }
+        if(is_null($y)) { $y = rand(0, 20000) / 100; }
         $this->x = $x;
         $this->y = $y;
     }

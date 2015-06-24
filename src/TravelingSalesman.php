@@ -74,6 +74,7 @@ class TravelingSalesman {
         $tourSize = $tour->tourSize();
         $best = 0;
         $bestSwap = array();
+        // TODO: change for statements to tourSize minus 1 for A to Z trips
         for ($tourPosA = 0; $tourPosA < $tourSize; $tourPosA++) {
             $tourPosB = ($tourPosA + 1) % $tourSize;
             for ($tourPosC = 0; $tourPosC < $tourSize; $tourPosC++) {
@@ -109,6 +110,24 @@ class TravelingSalesman {
 
             $newSolution = new TourImage();
             $i = 0;
+            if (true) { //maintain first city
+                if ($iA < $iC) {
+                    // add cities starting at 0 until you reach A
+                    while ($i <= $iA) {
+                        $newSolution->setCity($i, $tour->getCity($iC));
+                        $i++;
+                    }
+                    // add C and decrement until you reach B
+                    // add D and increment until you reach tour size
+                } else {
+                    // add cities startint at 0 until you reach C
+                    // add A and decrement until you reach D
+                    // add B and increment until tour size
+                }
+                unset($tour);
+                return self::optimizeTwoOp($newSolution);
+            }
+            
             $newSolution->setCity($i, $tour->getCity($iA));
             $i++;
             while ($iC != $iB) {

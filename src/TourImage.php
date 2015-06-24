@@ -37,12 +37,44 @@ class TourImage extends Tour {
                     $color
                 );
             }
+			if ($i === 0) { // highlight first city
+                imagesetpixel(
+                    $image,
+                    $currentCity->getX() + $offset + 2,
+                    $currentCity->getY(),
+                    $color
+                );
+                imagesetpixel(
+                    $image,
+                    $currentCity->getX() + $offset,
+                    $currentCity->getY() + 2,
+                    $color
+                );
+                imagesetpixel(
+                    $image,
+                    $currentCity->getX() + $offset - 2,
+                    $currentCity->getY(),
+                    $color
+                );
+                imagesetpixel(
+                    $image,
+                    $currentCity->getX() + $offset,
+                    $currentCity->getY() - 2,
+                    $color
+                );
+            }
         }
     }
     
-    public function drawTour($image, $color, $offset = 0) {
-        $lastCity = $this->getCity($this->tourSize() - 1);
-        for ($i = 0; $i < $this->tourSize(); $i++) {
+    public function drawTour($image, $color, $offset = 0, $aToZ = false) {
+		if ($aToZ) {
+			$lastCity = $this->getCity(0);
+			$i = 1;
+		} else {
+			$lastCity = $this->getCity($this->tourSize() - 1);
+			$i = 0;
+		}
+        while ($i < $this->tourSize()) {
             $currentCity = $this->getCity($i);
             imageline(
                 $image,
@@ -52,6 +84,7 @@ class TourImage extends Tour {
                 $currentCity->getY(),
                 $color);
             $lastCity = $currentCity;
+			$i++;
         }
     }
 }

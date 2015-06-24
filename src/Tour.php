@@ -23,7 +23,7 @@ class Tour {
           $this->setCity($cityIndex, TourManager::getCity($cityIndex));
         }
         // Randomly reorder the tour
-        shuffle($this->tour);
+        //shuffle($this->tour);
     }
 
     // Gets a city from the tour

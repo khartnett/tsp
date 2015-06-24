@@ -4,6 +4,8 @@ class TravelingSalesman {
 
     public static function main() {
         srand(654332);
+		// maintains first and last city positions
+        $aToZ = true;
         self::addCities();
 
         // Initialize intial solution
@@ -14,14 +16,13 @@ class TravelingSalesman {
         $best = new TourImage($currentSolution->getTour());
         
         $startTour = clone $best;
-        
         $timeStart = microtime(true);
-        $best = self::optimizeTwoOp($best);
+        $best = self::optimizeTwoOp($best, $aToZ);
         
         $timeEnd = microtime(true);
         $time = $timeEnd - $timeStart;
         
-        self::draw($startTour, $best, $time);
+        self::draw($startTour, $best, $time, $aToZ);
     }
     
     protected static function addCities() {
@@ -50,7 +51,7 @@ class TravelingSalesman {
         }
     }
     
-    protected static function draw($startTour, $endTour, $time) {
+    protected static function draw($startTour, $endTour, $time, $aToZ = false) {
         header ('Content-Type: image/png');
         $im = @imagecreatetruecolor(600, 200)
             or die('Cannot Initialize new GD image stream');
@@ -61,23 +62,31 @@ class TravelingSalesman {
         $startTour->drawTourDots($im, $dot_color);
         $startTour->drawTourDots($im, $dot_color, 200);
         $startTour->drawTourDots($im, $dot_color, 400);
-        $startTour->drawTour($im, $color, 200);
+        $startTour->drawTour($im, $color, 200, $aToZ);
         
         imagestring($im, 1, 5, 5,  'time: ' . $time, $text_color);
-        $endTour->drawTour($im, $color, 400);
+        $endTour->drawTour($im, $color, 400, $aToZ);
         imagepng($im);
         imagedestroy($im);
     }
 
 
-    public static function optimizeTwoOp(Tour $tour) {
-        $tourSize = $tour->tourSize();
+    public static function optimizeTwoOp(Tour $tour, $aToZ = false) {
+        $bestSwap = self::getBestSwap($tour, $aToZ);
+        if ($bestSwap) {
+            return self::optimizeTwoOp(self::swapCities($tour, $bestSwap, $aToZ), $aToZ);
+        }
+        return $tour;
+    }
+	
+	private static function getBestSwap(Tour $tour, $aToZ = false) {
+		$tourSize = $tour->tourSize();
         $best = 0;
         $bestSwap = array();
-        // TODO: change for statements to tourSize minus 1 for A to Z trips
-        for ($tourPosA = 0; $tourPosA < $tourSize; $tourPosA++) {
+		$toTourIndex = ($aToZ) ? $tourSize - 1 : $tourSize;
+        for ($tourPosA = 0; $tourPosA < $toTourIndex; $tourPosA++) {
             $tourPosB = ($tourPosA + 1) % $tourSize;
-            for ($tourPosC = 0; $tourPosC < $tourSize; $tourPosC++) {
+            for ($tourPosC = 0; $tourPosC < $toTourIndex; $tourPosC++) {
                 $tourPosD = ($tourPosC + 1) % $tourSize;
                 
                 if ($tourPosA === $tourPosC) {
@@ -102,49 +111,68 @@ class TravelingSalesman {
                 }
             }
         }
-        if ($bestSwap) {
-            $iA = $bestSwap[0];
-            $iB = $bestSwap[1];
-            $iC = $bestSwap[2];
-            $iD = $bestSwap[3];
+		return $bestSwap;
+	}
+	
+	private static function swapCities(Tour $tour, $bestSwap, $maintainFirst = false) {
+		$tourSize = $tour->tourSize();
+		$iA = $bestSwap[0];
+		$iB = $bestSwap[1];
+		$iC = $bestSwap[2];
+		$iD = $bestSwap[3];
 
-            $newSolution = new TourImage();
-            $i = 0;
-            if (true) { //maintain first city
-                if ($iA < $iC) {
-                    // add cities starting at 0 until you reach A
-                    while ($i <= $iA) {
-                        $newSolution->setCity($i, $tour->getCity($iC));
-                        $i++;
-                    }
-                    // add C and decrement until you reach B
-                    // add D and increment until you reach tour size
-                } else {
-                    // add cities startint at 0 until you reach C
-                    // add A and decrement until you reach D
-                    // add B and increment until tour size
-                }
-                unset($tour);
-                return self::optimizeTwoOp($newSolution);
-            }
-            
-            $newSolution->setCity($i, $tour->getCity($iA));
-            $i++;
-            while ($iC != $iB) {
-                $newSolution->setCity($i, $tour->getCity($iC));
-                $i++;
-                $iC = ($iC-1) % $tourSize;
-            }
-            $newSolution->setCity($i, $tour->getCity($iB));
-            $i++;
-            while ($iD != $iA) {
-                $newSolution->setCity($i, $tour->getCity($iD));
-                $i++;
-                $iD = ($iD+1) % $tourSize;
-            }
-            unset($tour);
-            return self::optimizeTwoOp($newSolution);
-        }
-        return $tour;
-    }
+		$newSolution = new TourImage();
+		$i = 0;
+		if ($maintainFirst) { //maintain first city
+			if ($iA > $iC) {
+				//swap A and C and swap B and D
+				$oldA = $iA;
+				$oldB = $iB;
+				$iA = $iC;
+				$iB = $iD;
+				$iC = $oldA;
+				$iD = $oldB;
+			}
+			// add cities starting at 0 until you reach A
+			while ($i <= $iA) {
+				$newSolution->setCity($i, $tour->getCity($i));
+				$i++;
+			}
+			// add C and decrement until you reach B
+			while ($iC >= $iB) {
+				$newSolution->setCity($i, $tour->getCity($iC));
+				$i++;
+				if($iC === 0) {
+					$iC = $tourSize;
+				}
+				$iC--;
+			}
+			// add D and increment until you reach tour size
+			while ($i < $tourSize) {
+				$newSolution->setCity($i, $tour->getCity($iD));
+				$i++;
+				$iD++;
+				if($iD >= $tourSize) {
+					$iD = 0;
+				}
+			}
+		} else {
+			$newSolution->setCity($i, $tour->getCity($iA));
+			$i++;
+			while ($iC != $iB) {
+				$newSolution->setCity($i, $tour->getCity($iC));
+				$i++;
+				$iC = ($iC-1) % $tourSize;
+			}
+			$newSolution->setCity($i, $tour->getCity($iB));
+			$i++;
+			while ($iD != $iA) {
+				$newSolution->setCity($i, $tour->getCity($iD));
+				$i++;
+				$iD = ($iD+1) % $tourSize;
+			}
+		}
+		unset($tour);
+		return $newSolution;
+	}
 }
